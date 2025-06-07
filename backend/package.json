@@ -1,13 +1,14 @@
 {
-  "name": "my-backend",
+  "name": "render-diagnostics",
   "version": "1.0.0",
-  "private": true,
+  "main": "index.js",
+  "type": "commonjs",
   "scripts": {
-  "postinstall": "npx puppeteer browsers install chrome",
-  "start": "node index.js"
-},
+    "postinstall": "npx puppeteer browsers install chrome",
+    "start": "node index.js"
+  },
   "dependencies": {
     "express": "^5.1.0",
     "puppeteer": "^24.10.0"
   }
-
+}
