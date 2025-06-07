@@ -1,6 +1,6 @@
 const express = require('express');
 const puppeteer = require('puppeteer');
-const { executablePath } = require('puppeteer');
+const { executablePath } = "/opt/render/.cache/puppeteer/chrome/linux-137.0.7151.55/chrome-linux64/chrome";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
