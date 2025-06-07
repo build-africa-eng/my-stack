@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: my-backend
+    env: node
+    repo: https://github.com/your-username/my-stack
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
