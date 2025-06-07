@@ -2,12 +2,14 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // Uses Render's port (e.g., 10000), defaults to 3000 locally
 
+// Root route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Render backend! Use /diagnostics?url=<url> for diagnostics.' });
 });
 
+// Diagnostics endpoint
 app.get('/diagnostics', async (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: 'No URL provided' });
