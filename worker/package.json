@@ -1,0 +1,12 @@
+{
+  "name": "my-worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "publish": "wrangler publish"
+  },
+  "devDependencies": {
+    "wrangler": "^4.19.1"
+  }
+}
