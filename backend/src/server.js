@@ -10,13 +10,8 @@ app.get("/diagnostics", async (req, res) => {
   if (!url) return res.status(400).json({ error: "Missing URL" });
 
   try {
-    // Dynamically get whatever executable Puppeteer downloaded.
-    const execPath = puppeteer.executablePath();
-    console.log("Launching with Chrome at:", execPath);
-
     const browser = await puppeteer.launch({
-      executablePath: execPath,
-      headless: "new",               // or true
+      headless: "new",
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
