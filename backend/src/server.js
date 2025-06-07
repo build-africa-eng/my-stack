@@ -4,12 +4,10 @@ const puppeteer = require('puppeteer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Root route for testing
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Render backend! Use /diagnostics?url=<url> for diagnostics.' });
 });
 
-// Diagnostics endpoint
 app.get('/diagnostics', async (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: 'No URL provided' });
@@ -17,7 +15,7 @@ app.get('/diagnostics', async (req, res) => {
   try {
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
     });
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle2' });
