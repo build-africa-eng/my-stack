@@ -4,6 +4,12 @@ const puppeteer = require('puppeteer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Root route for testing
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to the Render backend! Use /diagnostics?url=<url> for diagnostics.' });
+});
+
+// Diagnostics endpoint
 app.get('/diagnostics', async (req, res) => {
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: 'No URL provided' });
