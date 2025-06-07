@@ -1,51 +1,43 @@
-const express = require('express');
-const puppeteer = require('puppeteer');
-const { executablePath } = "/opt/render/.cache/puppeteer/chrome/linux-137.0.7151.55/chrome-linux64/chrome";
+const express = require("express");
+const puppeteer = require("puppeteer");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
-// Root route
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Welcome to the Render backend! Use /diagnostics?url=<url> for diagnostics.'
-  });
-});
+// Explicit path to Chrome installed during postinstall
+const executablePath = "/opt/render/.cache/puppeteer/chrome/linux-137.0.7151.55/chrome-linux64/chrome";
 
-// Diagnostics route
-app.get('/diagnostics', async (req, res) => {
-  const { url } = req.query;
-  if (!url) return res.status(400).json({ error: 'No URL provided' });
+app.get("/diagnostics", async (req, res) => {
+  const url = req.query.url;
+  if (!url) {
+    return res.status(400).json({ error: "Missing URL" });
+  }
 
   try {
     const browser = await puppeteer.launch({
-      headless: 'new',
-      executablePath: executablePath(),
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu'
-      ]
+      executablePath,
+      headless: "new",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    await page.goto(url, { waitUntil: "load", timeout: 20000 });
 
-    const screenshot = await page.screenshot({
-      encoding: 'base64',
-      fullPage: true
-    });
+    const title = await page.title();
+    const html = await page.content();
 
     await browser.close();
 
-    res.json({ url, screenshot });
+    res.json({
+      title,
+      length: html.length,
+      url,
+    });
   } catch (error) {
-    console.error('Puppeteer error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
