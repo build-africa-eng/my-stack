@@ -2,9 +2,11 @@ services:
   - type: web
     name: my-backend
     env: node
-    repo: https://github.com/your-username/my-stack
+    repo: https://github.com/build-africa-eng/my-stack
     branch: main
-    buildCommand: npm install
+    buildCommand: |
+      npm install
+      npx puppeteer browsers install chrome
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
