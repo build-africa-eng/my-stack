@@ -9,7 +9,7 @@ async function handleRequest(request) {
     return new Response('No URL provided', { status: 400 });
   }
 
-  const backendUrl = `https://your-backend.onrender.com/diagnostics?url=${encodeURIComponent(target)}`;
+  const backendUrl = `https://my-stack-vldi.onrender.com/diagnostics?url=${encodeURIComponent(target)}`;
   const resp = await fetch(backendUrl, {
     headers: { 'Content-Type': 'application/json' },
   });
