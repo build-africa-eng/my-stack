@@ -1,11 +1,11 @@
 {
   "name": "my-stack",
   "version": "1.0.0",
-  "main": "backend/src/server.js",
+  "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
     "postinstall": "npx puppeteer browsers install chrome",
-    "start": "node backend/src/server.js"
+    "start": "node src/server.js"
   },
   "dependencies": {
     "express": "^5.1.0",
