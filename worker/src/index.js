@@ -1,21 +1,26 @@
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request));
-});
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    const target = url.searchParams.get('url');
 
-async function handleRequest(request) {
-  const url = new URL(request.url);
-  const target = url.searchParams.get('url');
-  if (!target) {
-    return new Response('No URL provided', { status: 400 });
-  }
+    if (!target) {
+      return new Response('Missing ?url param', { status: 400 });
+    }
 
-  const backendUrl = `https://my-stack-vldi.onrender.com/diagnostics?url=${encodeURIComponent(target)}`;
-  const resp = await fetch(backendUrl, {
-    headers: { 'Content-Type': 'application/json' },
-  });
+    const renderApi = `https://my-stack-vldi.onrender.com/diagnostics?url=${encodeURIComponent(target)}`;
 
-  return new Response(resp.body, {
-    status: resp.status,
-    headers: { 'Content-Type': resp.headers.get('Content-Type') },
-  });
-              }
+    try {
+      const resp = await fetch(renderApi, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const contentType = resp.headers.get('Content-Type') || 'application/json';
+      return new Response(resp.body, {
+        status: resp.status,
+        headers: { 'Content-Type': contentType },
+      });
+    } catch (err) {
+      return new Response(`Error contacting backend: ${err.message}`, { status: 502 });
+    }
+  },
+};
