@@ -1,4 +1,7 @@
 name = "my-worker"
 main = "src/index.js"
 compatibility_date = "2025-06-08"
-workers_dev = true
+
+[[kv_namespaces]]
+binding = "SCRAPE_CACHE"
+id = "a4aace5f4df24d5fba94c21008f503fe"
