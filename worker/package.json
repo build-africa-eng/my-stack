@@ -7,7 +7,6 @@
     "publish": "wrangler publish"
   },
   "devDependencies": {
-    "wrangler": "^4.19.1",
-    "@cloudflare/puppeteer": "^1.0.2"
+    "wrangler": "^4.19.1"
   }
 }
