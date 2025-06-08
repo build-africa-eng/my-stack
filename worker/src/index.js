@@ -1,7 +1,7 @@
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    const allowedOrigin = 'https://my-stack.pages.dev';
+    const allowedOrigin = 'https://my-stack.pages.dev'; // Updated frontend origin
 
     // CORS preflight
     if (request.method === 'OPTIONS') {
@@ -18,14 +18,20 @@ export default {
     // Root route
     if (url.pathname === '/') {
       return new Response(
-        JSON.stringify({ message: 'WorkerStack Deployer. Use /auth, /repos, /deploy, or ?url=<url>.' }),
+        JSON.stringify({ message: 'WorkerStack Deployer. Use /auth, /repos, /deploy, /diagnostics, or ?url=<url>.' }),
         { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': allowedOrigin } }
       );
     }
 
     // GitHub OAuth: Initiate login
     if (url.pathname === '/auth') {
-      const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://my-worker.afrcanfuture.workers.dev/auth/callback')}&scope=repo`;
+      if (!env.GITHUB_CLIENT_ID) {
+        return new Response(JSON.stringify({ error: 'Missing GITHUB_CLIENT_ID in environment' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': allowedOrigin },
+        });
+      }
+      const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent('https://my-worker.afrcanfuture.workers.dev/auth/callback')}&scope=repo&state=${crypto.randomUUID()}`;
       return new Response(null, {
         status: 302,
         headers: { Location: githubAuthUrl, 'Access-Control-Allow-Origin': allowedOrigin },
@@ -35,6 +41,7 @@ export default {
     // GitHub OAuth: Callback
     if (url.pathname === '/auth/callback') {
       const code = url.searchParams.get('code');
+      const state = url.searchParams.get('state');
       if (!code) {
         return new Response(JSON.stringify({ error: 'Missing OAuth code' }), {
           status: 400,
@@ -43,6 +50,9 @@ export default {
       }
 
       try {
+        if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
+          throw new Error('Missing GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET in environment');
+        }
         const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -55,7 +65,7 @@ export default {
         const tokenData = await tokenRes.json();
         if (tokenData.error) throw new Error(tokenData.error_description);
 
-        const userId = `user:${crypto.randomUUID()}`; // Unique ID
+        const userId = `user:${crypto.randomUUID()}`;
         await env.SCRAPE_CACHE.put(`token:${userId}`, tokenData.access_token, { expirationTtl: 3600 });
 
         return new Response(null, {
@@ -76,6 +86,13 @@ export default {
     // List user repos
     if (url.pathname === '/repos') {
       const userId = url.searchParams.get('userId');
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'Missing userId parameter' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': allowedOrigin },
+        });
+      }
+
       const token = await env.SCRAPE_CACHE.get(`token:${userId}`);
       if (!token) {
         return new Response(JSON.stringify({ error: 'Invalid or expired session' }), {
@@ -149,7 +166,14 @@ export default {
                 production_branch: 'main',
                 deployment_configs: {
                   production: {
-                    source: { type: 'github', config: { owner: repoUrl.split('/')[3], repo_name: repoUrl.split('/')[4], production_branch: 'main' } },
+                    source: {
+                      type: 'github',
+                      config: {
+                        owner: repoUrl.split('/')[3],
+                        repo_name: repoUrl.split('/')[4],
+                        production_branch: 'main',
+                      },
+                    },
                   },
                 },
               }),
@@ -157,7 +181,6 @@ export default {
           );
           deployData = await deployRes.json();
           if (deployRes.ok) {
-            // Trigger deployment
             const deployTrigger = await fetch(
               `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/pages/projects/${encodeURIComponent(projectName)}/deployments`,
               {
@@ -196,9 +219,20 @@ export default {
     }
 
     // Diagnostics endpoint
-    const targetUrl = url.searchParams.get('url');
-    if (targetUrl) {
+    if (url.pathname === '/diagnostics' || url.searchParams.get('url')) {
+      const targetUrl = url.searchParams.get('url');
+      if (!targetUrl) {
+        return new Response(JSON.stringify({ error: 'Missing url parameter' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': allowedOrigin },
+        });
+      }
+
       try {
+        if (!env.SCRAPE_CACHE) {
+          throw new Error('SCRAPE_CACHE binding is undefined');
+        }
+
         const cacheKey = `scrape:${targetUrl}`;
         const cached = await env.SCRAPE_CACHE.get(cacheKey);
         if (cached) {
@@ -215,6 +249,8 @@ export default {
 
         if (backendRes.status === 200) {
           ctx.waitUntil(env.SCRAPE_CACHE.put(cacheKey, body, { expirationTtl: 3600 }));
+        } else {
+          throw new Error(`Render backend error: ${body}`);
         }
 
         return new Response(body, {
