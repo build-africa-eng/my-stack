@@ -22,12 +22,15 @@ export default function DeployForm({ setOutput }) {
 
   const fetchRepos = async (userId) => {
     try {
-      const response = await fetch(`https://my-worker.afrcanfuture.workers.dev/repos?userId=${encodeURIComponent(userId)}`);
+      const response = await fetch(`https://my-worker.afrcanfuture.workers.dev/repos?userId=${encodeURIComponent(userId)}`, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
       const data = await response.json();
       if (data.error) throw new Error(data.error);
       setRepos(data);
     } catch (error) {
-      setOutput({ error: error.message });
+      setOutput({ error: `Failed to fetch repos: ${error.message}` });
     }
   };
 
@@ -37,10 +40,11 @@ export default function DeployForm({ setOutput }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setOutput(null); // Clear previous output
     try {
       let response;
       if (mode === 'analyze') {
-        response = await fetch(`https://my-worker.afrcanfuture.workers.dev/?url=${encodeURIComponent(url)}`, {
+        response = await fetch(`https://my-worker.afrcanfuture.workers.dev/diagnostics?url=${encodeURIComponent(url)}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -58,10 +62,12 @@ export default function DeployForm({ setOutput }) {
           }),
         });
       }
-      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error: ${response.status}`);
+      }
       const data = await response.json();
       setOutput(data);
-      // Clear sensitive fields
       if (mode === 'deploy') {
         setCloudflareToken('');
         setAccountId('');
