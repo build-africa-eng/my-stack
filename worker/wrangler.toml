@@ -1,6 +1,4 @@
-name = "diagnostic-worker"
+name = "my-worker"
 main = "src/index.js"
-compatibility_date = "2025-06-07"
-compatibility_flags = ["nodejs_compat"]
-
-browser = { binding = "MY_BROWSER" }
+compatibility_date = "2024-06-08"
+workers_dev = true
